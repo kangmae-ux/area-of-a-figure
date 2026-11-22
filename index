@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>소크라테스 수학 선생님 - 도형의 넓이</title>
+<style>
+:root{--p:#2563eb;--pl:#eff6ff;--bg:#f8fafc;--fg:#111827;--bd:#d1d5db;--ok:#16a34a;--warn:#d97706;--r:10px;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Pretendard,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;background:var(--bg);color:var(--fg);height:100vh;display:flex;flex-direction:column}
+header{background:#fff;border-bottom:1px solid var(--bd);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header .sub{font-size:13px;color:#6b7280}
+.score{font-size:14px;color:#374151}
+.score b{color:var(--p)}
+.wrap{flex:1;display:flex;min-height:0}
+aside{width:250px;background:#fff;border-right:1px solid var(--bd);padding:14px;overflow-y:auto;flex-shrink:0}
+aside h2{font-size:13px;color:#6b7280;margin:14px 0 8px;font-weight:600}
+aside h2:first-child{margin-top:0}
+.topic{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:9px 10px;margin-bottom:6px;cursor:pointer;font-size:14px;font-family:inherit;color:var(--fg)}
+.topic:hover{border-color:var(--p)}
+.topic.active{border-color:var(--p);background:var(--pl);font-weight:600}
+.topic .st{font-size:12px;color:#9ca3af}
+.topic .st.done{color:var(--ok);font-weight:600}
+.note{font-size:13px;line-height:1.6;border:1px solid var(--bd);border-radius:8px;padding:8px 10px;min-height:60px;background:#fffbeb}
+.note div{border-bottom:1px dashed #e5e7eb;padding:3px 0}
+.note div:last-child{border-bottom:none}
+.note .empty{color:#9ca3af}
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+#chat{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:min(620px,85%);padding:11px 14px;border-radius:14px;line-height:1.6;font-size:15px;white-space:pre-wrap;word-break:keep-all}
+.bot{align-self:flex-start;background:#fff;border:1px solid var(--bd);border-top-left-radius:4px}
+.user{align-self:flex-end;background:var(--p);color:#fff;border-top-right-radius:4px}
+.bot .who{font-size:12px;color:var(--p);font-weight:700;margin-bottom:3px}
+.bot.hint{background:#fff7ed;border-color:#fed7aa}
+.bot.hint .who{color:var(--warn)}
+.bot.good{background:#f0fdf4;border-color:#bbf7d0}
+.bot.good .who{color:var(--ok)}
+.bot svg{display:block;width:100%;max-width:340px;margin-top:8px;background:#fafafa;border:1px solid #e5e7eb;border-radius:8px}
+.choices{display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start}
+.choices button{border:1px solid var(--p);background:#fff;color:var(--p);border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;font-family:inherit}
+.choices button:hover{background:var(--pl)}
+.typing{align-self:flex-start;color:#9ca3af;font-size:13px;padding-left:6px}
+.bar{border-top:1px solid var(--bd);background:#fff;padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap}
+.bar input{flex:1;min-width:180px;border:1px solid var(--bd);border-radius:8px;padding:11px 12px;font-size:15px;font-family:inherit}
+.bar input:focus{outline:2px solid var(--p);border-color:transparent}
+.bar button{border:none;border-radius:8px;padding:0 16px;font-size:14px;cursor:pointer;font-family:inherit}
+#send{background:var(--p);color:#fff}
+.ghost{background:#f3f4f6;color:#374151}
+.progress{height:4px;background:#e5e7eb}
+.progress div{height:100%;background:var(--p);width:0;transition:width .3s}
+@media(max-width:760px){aside{display:none}aside.open{display:block;position:fixed;top:60px;left:0;bottom:0;z-index:5}#menu{display:inline-block!important}}
+#menu{display:none;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>소크라테스 수학 선생님 · 도형의 넓이</h1>
+    <div class="sub">정답을 알려주기보다 질문으로 스스로 찾도록 도와줘요 (초등 5~6학년)</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span class="score">혼자 맞힘 <b id="sc1">0</b> · 힌트 받고 맞힘 <b id="sc2">0</b></span>
+    <button id="menu" onclick="document.querySelector('aside').classList.toggle('open')">단원</button>
+  </div>
+</header>
+<div class="progress"><div id="pg"></div></div>
+<div class="wrap">
+  <aside>
+    <h2>탐구할 도형</h2>
+    <div id="topics"></div>
+    <h2>나의 발견 노트</h2>
+    <div class="note" id="note"><span class="empty">스스로 발견한 공식이 여기에 쌓여요.</span></div>
+    <h2>이렇게 말해도 돼요</h2>
+    <div style="font-size:13px;color:#4b5563;line-height:1.7">"모르겠어요" · "힌트" → 실마리 질문<br>"처음부터" → 이 단원 다시 하기</div>
+  </aside>
+  <main>
+    <div id="chat"></div>
+    <div class="bar">
+      <input id="inp" placeholder="생각한 답이나 이유를 적어 보세요" autocomplete="off">
+      <button class="ghost" onclick="userSay('모르겠어요')">모르겠어요</button>
+      <button id="send">보내기</button>
+    </div>
+  </main>
+</div>
+<script>
+// ---------- 그림 ----------
+var S = {
+  para: '<svg viewBox="0 0 320 160"><polygon points="40,130 220,130 270,40 90,40" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><line x1="90" y1="40" x2="90" y2="130" stroke="#dc2626" stroke-dasharray="5 4" stroke-width="2"/><rect x="90" y="120" width="10" height="10" fill="none" stroke="#dc2626"/><text x="120" y="150" font-size="13">밑변 6cm</text><text x="96" y="90" font-size="13" fill="#dc2626">높이 4cm</text><text x="232" y="85" font-size="12" fill="#6b7280">5cm</text></svg>',
+  paraCut: '<svg viewBox="0 0 320 160"><polygon points="90,130 220,130 270,40 90,40" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><polygon points="40,130 90,130 90,40" fill="#fde68a" stroke="#d97706" stroke-width="2"/><polygon points="220,130 270,130 270,40" fill="none" stroke="#d97706" stroke-dasharray="5 4" stroke-width="2"/><path d="M65 105 Q160 160 245 110" fill="none" stroke="#d97706" stroke-width="1.5" marker-end="url(#a)"/><defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#d97706"/></marker></defs><text x="110" y="25" font-size="13">노란 삼각형을 잘라 오른쪽으로 옮기면?</text></svg>',
+  tri: '<svg viewBox="0 0 320 160"><polygon points="40,130 200,130 100,40" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><polygon points="200,130 100,40 260,40" fill="#fde68a" fill-opacity=".6" stroke="#d97706" stroke-dasharray="5 4" stroke-width="2"/><line x1="100" y1="40" x2="100" y2="130" stroke="#dc2626" stroke-dasharray="4 4"/><text x="95" y="150" font-size="13">밑변</text><text x="104" y="95" font-size="12" fill="#dc2626">높이</text><text x="190" y="28" font-size="12" fill="#d97706">똑같은 삼각형을 돌려 붙임</text></svg>',
+  trap: '<svg viewBox="0 0 320 160"><polygon points="30,130 150,130 140,50 60,50" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><polygon points="150,130 140,50 260,50 230,130" fill="#fde68a" fill-opacity=".6" stroke="#d97706" stroke-dasharray="5 4" stroke-width="2"/><text x="85" y="44" font-size="12">윗변</text><text x="75" y="148" font-size="12">아랫변</text><text x="185" y="44" font-size="12" fill="#d97706">아랫변</text><text x="175" y="148" font-size="12" fill="#d97706">윗변</text><line x1="60" y1="50" x2="60" y2="130" stroke="#dc2626" stroke-dasharray="4 4"/><text x="64" y="95" font-size="12" fill="#dc2626">높이</text></svg>',
+  rhom: '<svg viewBox="0 0 320 160"><rect x="60" y="25" width="200" height="110" fill="none" stroke="#9ca3af" stroke-dasharray="5 4" stroke-width="2"/><polygon points="160,25 260,80 160,135 60,80" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><line x1="60" y1="80" x2="260" y2="80" stroke="#dc2626" stroke-width="1.5"/><line x1="160" y1="25" x2="160" y2="135" stroke="#dc2626" stroke-width="1.5"/><text x="200" y="74" font-size="12" fill="#dc2626">대각선 8cm</text><text x="165" y="115" font-size="12" fill="#dc2626">대각선 6cm</text></svg>',
+  circ: '<svg viewBox="0 0 320 160"><circle cx="75" cy="80" r="55" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><g stroke="#2563eb" stroke-width="1"><line x1="20" y1="80" x2="130" y2="80"/><line x1="75" y1="25" x2="75" y2="135"/><line x1="36" y1="41" x2="114" y2="119"/><line x1="114" y1="41" x2="36" y2="119"/></g><text x="140" y="85" font-size="20">→</text><path d="M170 120 L182 50 L194 120 L206 50 L218 120 L230 50 L242 120 L254 50 L266 120 L278 50 L290 120" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><text x="180" y="145" font-size="12">아주 잘게 잘라 번갈아 붙이면?</text></svg>',
+  circRect: '<svg viewBox="0 0 320 160"><rect x="60" y="40" width="200" height="70" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="100" y="32" font-size="12">가로 = 원주의 ( ? )</text><text x="266" y="80" font-size="12" fill="#dc2626">세로</text><text x="266" y="96" font-size="12" fill="#dc2626">= ( ? )</text><text x="80" y="130" font-size="12" fill="#6b7280">위쪽 + 아래쪽 = 원의 둘레 전체</text></svg>',
+  box: '<svg viewBox="0 0 320 160"><polygon points="90,60 210,60 250,30 130,30" fill="#bfdbfe" stroke="#2563eb" stroke-width="2"/><polygon points="90,60 210,60 210,130 90,130" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><polygon points="210,60 250,30 250,100 210,130" fill="#93c5fd" stroke="#2563eb" stroke-width="2"/><text x="135" y="148" font-size="12">가로 4cm</text><text x="236" y="125" font-size="12">세로 3cm</text><text x="40" y="100" font-size="12">높이 2cm</text></svg>'
+};
+
+// ---------- 문답 시나리오 ----------
+// type: num(수) / kw(낱말) / choice(선택) / open(자유 생각)
+// kw: 여러 묶음 중 하나라도 묶음 안의 낱말을 모두 포함하면 정답. 'HALF'는 반/절반/÷2 등
+var TOPICS = [
+ {id:'para', name:'평행사변형', formula:'평행사변형 = 밑변 × 높이',
+  intro:'평행사변형의 넓이를 함께 탐구해 볼까요? 저는 답을 바로 알려주지 않고 질문을 할 거예요. 천천히 생각해 보세요.',
+  steps:[
+   {q:'먼저 이미 아는 것부터 떠올려 봐요. 가로 5cm, 세로 3cm인 직사각형의 넓이는 몇 cm²일까요?', type:'num', ans:15,
+    hints:['넓이가 1cm²인 작은 정사각형이 몇 개 들어갈지 생각해 볼래요?','한 줄에 5개씩 놓이는데, 그런 줄이 3줄 있다면 모두 몇 개일까요?'],
+    ok:'맞아요, 5 × 3 = 15cm²예요. 직사각형은 "가로 × 세로"였지요.'},
+   {q:'이번엔 평행사변형을 봐요. 이 도형에도 1cm² 정사각형을 빈틈없이 놓기는 어려워 보여요. 그렇다면 우리가 넓이를 잘 아는 도형으로 바꿀 수는 없을까요?\n\n노란 삼각형을 잘라 오른쪽에 붙이면 어떤 도형이 될까요?', svg:'paraCut', type:'kw', ans:'직사각형',
+    kw:[['직사각형'],['네모'],['사각형']],
+    hints:['잘라 붙인 뒤 네 모서리의 각은 어떻게 될까요? 모두 직각이 되지 않나요?','네 각이 모두 직각인 사각형을 무엇이라고 불렀지요?'],
+    ok:'그래요, 직사각형이 돼요. 그럼 넓이는 달라졌을까요? 잘라서 옮기기만 했으니 넓이는 그대로예요.'},
+   {q:'새로 생긴 직사각형의 "가로"는 원래 평행사변형의 어느 부분과 같은 길이일까요?', svg:'para', type:'kw', ans:'밑변',
+    kw:[['밑변'],['아래']],
+    hints:['삼각형을 왼쪽에서 오른쪽으로 옮겼을 때, 아래쪽 변의 길이는 변했나요?','평행사변형에서 아래에 놓인 변을 무엇이라고 부를까요?'],
+    ok:'맞아요. 직사각형의 가로 = 평행사변형의 밑변이에요.'},
+   {q:'그렇다면 직사각형의 "세로"는 평행사변형의 무엇과 같을까요? 기울어진 옆변(5cm)일까요, 아니면 다른 것일까요?', svg:'para', type:'kw', ans:'높이',
+    kw:[['높이'],['빨간'],['점선'],['4']],
+    hints:['그림의 빨간 점선은 밑변과 어떤 각을 이루고 있나요?','직사각형의 세로는 가로와 수직이에요. 평행사변형에서 밑변과 수직인 선분을 무엇이라 했지요?'],
+    ok:'정확해요. 세로 = 높이예요. 기울어진 옆변은 세로가 되지 않아요.'},
+   {q:'지금까지 발견한 것을 모아 볼까요? 평행사변형의 넓이를 구하는 방법을 내 말로 표현해 보세요.', type:'kw', ans:'밑변 × 높이',
+    kw:[['밑변','높이']],
+    hints:['직사각형의 넓이는 가로 × 세로였어요. 가로와 세로가 각각 무엇으로 바뀌었나요?','"가로"를 "밑변"으로, "세로"를 "높이"로 바꾸어 말해 보세요.'],
+    ok:'훌륭해요! 평행사변형의 넓이 = 밑변 × 높이. 이건 여러분이 스스로 발견한 공식이에요.'},
+   {q:'발견한 방법을 써 볼까요? 밑변 6cm, 높이 4cm인 평행사변형의 넓이는 몇 cm²일까요?', svg:'para', type:'num', ans:24,
+    hints:['밑변 × 높이에 숫자를 넣어 보면 어떻게 될까요?','6 × 4는 얼마일까요? (5cm는 옆변이니 쓰지 않아요)'],
+    ok:'6 × 4 = 24cm², 정답이에요.'},
+   {q:'마지막으로 생각해 볼 질문이에요. 어떤 친구가 "6 × 5 = 30cm²"라고 했어요. 이 친구의 생각에서 무엇이 잘못되었는지, 친구에게 설명하듯 써 보세요.', type:'open',
+    ok:'좋은 설명이에요. 핵심은 5cm인 옆변은 기울어져 있어서 직사각형의 세로가 되지 않는다는 점이에요. 넓이를 구할 때는 밑변과 수직인 "높이"를 써야 해요.'}
+  ]},
+ {id:'tri', name:'삼각형', formula:'삼각형 = 밑변 × 높이 ÷ 2',
+  intro:'이번엔 삼각형이에요. 방금 배운 평행사변형을 이용할 수 있을지도 몰라요.',
+  steps:[
+   {q:'똑같은 삼각형 두 개를 준비해서, 하나를 돌려 붙이면 어떤 도형이 될까요?', svg:'tri', type:'kw', ans:'평행사변형',
+    kw:[['평행사변형'],['평행']],
+    hints:['붙여서 생긴 사각형에서 마주 보는 변끼리는 어떤 관계일까요?','두 쌍의 마주 보는 변이 서로 평행한 사각형의 이름은 무엇이었지요?'],
+    ok:'맞아요, 평행사변형이 돼요.'},
+   {q:'그렇다면 삼각형 하나의 넓이는 그 평행사변형 넓이의 얼마일까요?', svg:'tri', type:'kw', ans:'절반(÷ 2)',
+    kw:[['HALF']],
+    hints:['평행사변형은 똑같은 삼각형 몇 개로 이루어져 있나요?','2개 중 1개라면 전체의 얼마만큼일까요?'],
+    ok:'그래요, 정확히 절반이에요.'},
+   {q:'평행사변형의 넓이는 "밑변 × 높이"였어요. 그렇다면 삼각형의 넓이는 어떻게 구하면 될까요?', type:'kw', ans:'밑변 × 높이 ÷ 2',
+    kw:[['밑변','높이','HALF']],
+    hints:['평행사변형의 밑변과 높이는 삼각형의 밑변, 높이와 같아요. 그럼 남은 건 무엇일까요?','"밑변 × 높이"에 방금 찾은 "절반"을 더해 말해 보세요.'],
+    ok:'멋져요! 삼각형의 넓이 = 밑변 × 높이 ÷ 2.'},
+   {q:'밑변 8cm, 높이 5cm인 삼각형의 넓이는 몇 cm²일까요?', type:'num', ans:20,
+    hints:['먼저 8 × 5를 구해 볼까요?','40을 2로 나누면 얼마일까요?'],
+    ok:'8 × 5 ÷ 2 = 20cm²예요.'},
+   {q:'생각해 볼 질문! 밑변과 높이가 같다면, 모양이 서로 다른 삼각형들의 넓이는 어떨까요?', type:'choice', choices:['모두 같다','모두 다르다'], ans:'모두 같다',
+    hints:['넓이 공식에 들어가는 것은 무엇과 무엇뿐이었나요?','밑변과 높이가 같다면 "밑변 × 높이 ÷ 2"의 값이 달라질 수 있을까요?'],
+    ok:'맞아요. 공식에는 밑변과 높이만 들어가니까, 꼭짓점이 옆으로 움직여 모양이 달라져도 높이가 같으면 넓이는 같아요.'}
+  ]},
+ {id:'trap', name:'사다리꼴', formula:'사다리꼴 = (윗변 + 아랫변) × 높이 ÷ 2',
+  intro:'사다리꼴은 평행한 변이 한 쌍이라 조금 까다로워 보여요. 하지만 삼각형 때 썼던 방법이 또 통할까요?',
+  steps:[
+   {q:'똑같은 사다리꼴 두 개를 준비해서, 하나를 거꾸로 뒤집어 옆에 붙이면 어떤 도형이 될까요?', svg:'trap', type:'kw', ans:'평행사변형',
+    kw:[['평행사변형'],['평행']],
+    hints:['삼각형 두 개를 붙였을 때와 비슷한 일이 일어나지 않나요?','위쪽 변과 아래쪽 변, 왼쪽 변과 오른쪽 변이 각각 평행해 보이나요?'],
+    ok:'맞아요, 평행사변형이 돼요.'},
+   {q:'새로 생긴 평행사변형의 밑변은 사다리꼴의 어떤 두 변을 더한 길이일까요?', svg:'trap', type:'kw', ans:'윗변 + 아랫변',
+    kw:[['윗변','아랫변'],['위','아래']],
+    hints:['그림에서 큰 평행사변형의 아래쪽 변은 파란 사다리꼴의 어느 변과 노란 사다리꼴의 어느 변으로 이루어져 있나요?','파란 쪽의 "아랫변"과 노란 쪽의 "윗변"이 이어져 있어요. 그러면 어떤 두 길이를 더한 것일까요?'],
+    ok:'그래요. 평행사변형의 밑변 = 윗변 + 아랫변.'},
+   {q:'평행사변형의 높이는 사다리꼴의 높이와 비교하면 어떨까요?', type:'choice', choices:['그대로 같다','2배가 된다','절반이 된다'], ans:'그대로 같다',
+    hints:['옆으로 붙였을 뿐인데, 위아래 사이의 거리가 변했을까요?'],
+    ok:'맞아요. 옆으로 붙였으니 높이는 그대로예요.'},
+   {q:'이제 모든 재료가 모였어요. 사다리꼴 하나의 넓이를 구하는 방법을 말해 볼까요?', type:'kw', ans:'(윗변 + 아랫변) × 높이 ÷ 2',
+    kw:[['윗변','아랫변','높이','HALF']],
+    hints:['평행사변형 넓이 = (윗변 + 아랫변) × 높이예요. 사다리꼴은 그중 몇 개 중 몇 개인가요?','두 개 중 하나이니 마지막에 무엇을 해야 할까요? 윗변, 아랫변, 높이, 그리고 "÷ 2"를 모두 넣어 말해 보세요.'],
+    ok:'대단해요! 사다리꼴의 넓이 = (윗변 + 아랫변) × 높이 ÷ 2.'},
+   {q:'윗변 4cm, 아랫변 6cm, 높이 5cm인 사다리꼴의 넓이는 몇 cm²일까요?', type:'num', ans:25,
+    hints:['먼저 괄호 안의 윗변 + 아랫변은 얼마인가요?','(4 + 6) × 5 = 50. 이제 무엇을 하면 될까요?'],
+    ok:'(4 + 6) × 5 ÷ 2 = 25cm²예요.'}
+  ]},
+ {id:'rhom', name:'마름모', formula:'마름모 = 한 대각선 × 다른 대각선 ÷ 2',
+  intro:'마름모는 네 변의 길이가 모두 같은 사각형이에요. 이번엔 붙이는 대신 "둘러싸는" 방법을 써 볼까요?',
+  steps:[
+   {q:'그림처럼 마름모를 꼭 맞게 둘러싸는 직사각형을 그렸어요. 이 직사각형의 가로와 세로는 마름모의 무엇과 같은 길이일까요?', svg:'rhom', type:'kw', ans:'두 대각선',
+    kw:[['대각선'],['빨간']],
+    hints:['그림의 빨간 선 두 개를 보세요. 직사각형의 가로, 세로와 길이가 같지 않나요?','마름모의 마주 보는 꼭짓점을 이은 선분을 무엇이라 부르지요?'],
+    ok:'맞아요. 직사각형의 가로와 세로는 마름모의 두 대각선과 같아요.'},
+   {q:'대각선이 8cm, 6cm라면 둘러싼 직사각형의 넓이는 몇 cm²일까요?', svg:'rhom', type:'num', ans:48,
+    hints:['직사각형 넓이는 가로 × 세로예요.','8 × 6은 얼마일까요?'],
+    ok:'8 × 6 = 48cm²예요.'},
+   {q:'대각선이 직사각형을 작은 직사각형 4개로 나눠요. 작은 직사각형 하나 안에서 마름모 부분(파란색)과 바깥 부분(흰색)을 비교하면 어떨까요? 그렇다면 마름모는 큰 직사각형의 얼마일까요?', svg:'rhom', type:'kw', ans:'절반(÷ 2)',
+    kw:[['HALF']],
+    hints:['작은 직사각형 하나를 대각선으로 자르면 똑같은 삼각형 몇 개가 생기나요?','파란 삼각형과 흰 삼각형이 똑같다면 파란 부분은 전체의 얼마인가요?'],
+    ok:'그래요, 마름모는 직사각형의 절반이에요.'},
+   {q:'그럼 마름모의 넓이를 구하는 방법을 말해 볼까요?', type:'kw', ans:'한 대각선 × 다른 대각선 ÷ 2',
+    kw:[['대각선','HALF']],
+    hints:['직사각형 넓이 = 대각선 × 대각선이었어요. 마름모는 그중 얼마였지요?','"대각선 × 대각선"에 "÷ 2"를 붙여 말해 보세요.'],
+    ok:'완벽해요! 마름모의 넓이 = 한 대각선 × 다른 대각선 ÷ 2.'},
+   {q:'두 대각선이 10cm, 7cm인 마름모의 넓이는 몇 cm²일까요?', type:'num', ans:35,
+    hints:['10 × 7은 얼마인가요?','70의 절반은?'],
+    ok:'10 × 7 ÷ 2 = 35cm²예요.'}
+  ]},
+ {id:'circ', name:'원 (6학년)', formula:'원 = 반지름 × 반지름 × 원주율(3.14)',
+  intro:'6학년의 핵심, 원의 넓이예요! 원은 곧은 변이 하나도 없는데 어떻게 넓이를 구할까요? 지금까지 쓴 "아는 도형으로 바꾸기"를 떠올려 보세요.',
+  steps:[
+   {q:'원을 피자처럼 아주 잘게 잘라서 위아래 번갈아 붙여 봐요. 조각을 더 잘게 자를수록 어떤 도형에 가까워질까요?', svg:'circ', type:'kw', ans:'직사각형',
+    kw:[['직사각형'],['사각형'],['네모'],['평행사변형']],
+    hints:['조각이 아주 많아지면 울퉁불퉁한 위아래가 어떻게 될까요?','위아래가 곧게 펴지고 양 옆이 똑바로 서면 어떤 도형이 되지요?'],
+    ok:'맞아요, 직사각형에 가까워져요. 넓이는 원과 같아요.'},
+   {q:'이 직사각형의 세로는 원의 어느 부분과 같은 길이일까요?', svg:'circRect', type:'kw', ans:'반지름',
+    kw:[['반지름']],
+    hints:['피자 한 조각의 뾰족한 끝에서 둥근 끝까지의 길이는 원에서 무엇일까요?','원의 중심에서 원 위의 한 점까지의 선분을 무엇이라고 했지요?'],
+    ok:'정답! 세로 = 반지름이에요.'},
+   {q:'가로는 원의 둘레(원주)와 어떤 관계일까요? 원의 둘레가 위쪽과 아래쪽으로 나뉘어 있다는 점을 생각해 보세요.', svg:'circRect', type:'kw', ans:'원주의 절반',
+    kw:[['HALF']],
+    hints:['둥근 부분은 절반은 위쪽에, 절반은 아래쪽에 있어요. 가로는 그중 한쪽만이지요?','위쪽 하나가 둘레 전체의 얼마일까요?'],
+    ok:'맞아요, 가로 = 원주의 절반이에요.'},
+   {q:'원주 = 지름 × 원주율이었지요. 지름은 반지름의 2배이니, 원주의 절반은 "반지름 × 원주율"이 돼요.\n\n그렇다면 직사각형의 넓이(가로 × 세로), 즉 원의 넓이는 어떻게 나타낼 수 있을까요?', type:'kw', ans:'반지름 × 반지름 × 원주율',
+    kw:[['반지름','반지름','원주율'],['반지름','반지름','3.14'],['반지름','원주율','두'],['반지름','3.14','두']],
+    hints:['가로 = 반지름 × 원주율, 세로 = 반지름이에요. 이 둘을 곱하면?','반지름이 두 번 들어가요. "반지름 × 반지름 × 원주율"처럼 말해 볼래요?'],
+    ok:'훌륭해요! 원의 넓이 = 반지름 × 반지름 × 원주율.'},
+   {q:'반지름이 5cm인 원의 넓이는 몇 cm²일까요? (원주율은 3.14)', type:'num', ans:78.5,
+    hints:['5 × 5는 얼마인가요?','25 × 3.14를 계산해 보세요.'],
+    ok:'5 × 5 × 3.14 = 78.5cm²예요.'},
+   {q:'조금 함정이 있는 문제예요. 지름이 8cm인 원의 넓이는 몇 cm²일까요? (원주율 3.14)', type:'num', ans:50.24,
+    hints:['공식에 들어가는 건 지름일까요, 반지름일까요?','지름 8cm면 반지름은 4cm예요. 4 × 4 × 3.14는?'],
+    ok:'4 × 4 × 3.14 = 50.24cm²예요. 지름을 반지름으로 바꾸는 것을 잊지 않았군요!'},
+   {q:'생각을 넓혀 볼까요? 반지름이 2배가 되면 원의 넓이는 몇 배가 될까요?', type:'choice', choices:['2배','4배','8배'], ans:'4배',
+    hints:['반지름 1cm인 원과 2cm인 원의 넓이를 각각 구해 비교해 볼까요?','1 × 1 × 3.14 = 3.14, 2 × 2 × 3.14 = 12.56이에요. 몇 배인가요?'],
+    ok:'맞아요! 반지름이 공식에 두 번 곱해지니까 2 × 2 = 4배가 돼요.'}
+  ]},
+ {id:'box', name:'직육면체 겉넓이 (6학년)', formula:'직육면체 겉넓이 = (한 꼭짓점에서 만나는 세 면의 넓이의 합) × 2',
+  intro:'이번엔 입체도형의 겉넓이예요. 겉넓이는 "겉을 감싸는 모든 면의 넓이의 합"이에요.',
+  steps:[
+   {q:'직육면체에는 면이 모두 몇 개 있을까요?', svg:'box', type:'num', ans:6,
+    hints:['위·아래를 세고, 앞·뒤를 세고, 왼쪽·오른쪽을 세어 볼까요?','2 + 2 + 2는?'],
+    ok:'맞아요, 6개예요.'},
+   {q:'서로 마주 보는 두 면(예: 위와 아래)은 어떤 관계일까요?', svg:'box', type:'kw', ans:'모양과 크기가 같다(합동)',
+    kw:[['같'],['합동'],['똑같'],['동일']],
+    hints:['상자의 뚜껑과 바닥을 겹쳐 보면 어떻게 될까요?','꼭 맞게 겹쳐진다면 모양과 크기가 어떻다고 할 수 있나요?'],
+    ok:'맞아요. 마주 보는 면은 서로 합동이에요. 그러니 서로 다른 면은 3종류뿐이에요.'},
+   {q:'가로 4cm, 세로 3cm, 높이 2cm인 직육면체가 있어요. 서로 다른 세 면(4×3, 4×2, 3×2)의 넓이를 모두 더하면 몇 cm²일까요?', svg:'box', type:'num', ans:26,
+    hints:['각각 12, 8, 6이에요. 더해 볼까요?','12 + 8 + 6은?'],
+    ok:'12 + 8 + 6 = 26cm²예요.'},
+   {q:'그렇다면 이 직육면체의 겉넓이는 몇 cm²일까요?', type:'num', ans:52,
+    hints:['세 면은 각각 몇 개씩 있나요?','같은 면이 2개씩 있으니 26에 무엇을 하면 될까요?'],
+    ok:'26 × 2 = 52cm², 정답이에요.'},
+   {q:'방금 한 방법을 일반적인 방법으로 정리해 볼까요? 직육면체의 겉넓이는 어떻게 구할 수 있을까요?', type:'kw', ans:'세 면의 넓이의 합 × 2',
+    kw:[['2'],['두'],['배']],
+    hints:['서로 다른 세 면의 넓이를 더한 뒤 어떻게 했었지요?','"세 면의 넓이를 더해서 ○배"처럼 말해 보세요.'],
+    ok:'완벽해요! 겉넓이 = (서로 다른 세 면의 넓이의 합) × 2. 여섯 면을 모두 더해도 같은 답이 나와요.'}
+  ]}
+];
+
+// ---------- 상태 ----------
+var st = {t:null, s:0, tries:0, done:{}, solo:0, helped:0, lock:false};
+var chat = document.getElementById('chat');
+var inp = document.getElementById('inp');
+var PRAISE = ['좋아요!','훌륭해요!','바로 그거예요!','멋진 생각이에요!','맞아요!'];
+var RETRY = ['음, 다시 한번 생각해 볼까요?','좋은 시도예요. 그런데 이렇게 생각해 보면 어떨까요?','거의 다 왔어요. 질문 하나 더 할게요.'];
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+function addMsg(text, cls, svgKey){
+  var d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  if (cls.indexOf('bot') === 0) {
+    var w = document.createElement('div');
+    w.className = 'who';
+    w.textContent = cls.indexOf('hint') > 0 ? '실마리 질문' : (cls.indexOf('good') > 0 ? '선생님' : '소크라테스 선생님');
+    d.appendChild(w);
+  }
+  var t = document.createElement('div');
+  t.textContent = text;
+  d.appendChild(t);
+  if (svgKey && S[svgKey]) {
+    var sv = document.createElement('div');
+    sv.innerHTML = S[svgKey];
+    d.appendChild(sv);
+  }
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+function bot(text, cls, svgKey, cb){
+  st.lock = true;
+  var ty = document.createElement('div');
+  ty.className = 'typing';
+  ty.textContent = '선생님이 생각하는 중...';
+  chat.appendChild(ty);
+  chat.scrollTop = chat.scrollHeight;
+  setTimeout(function(){
+    ty.remove();
+    addMsg(text, 'bot ' + (cls || ''), svgKey);
+    st.lock = false;
+    if (cb) cb();
+  }, 450);
+}
+function clearChoices(){
+  var c = document.querySelectorAll('.choices');
+  for (var i = 0; i < c.length; i++) c[i].remove();
+}
+function showChoices(list){
+  clearChoices();
+  var box = document.createElement('div');
+  box.className = 'choices';
+  list.forEach(function(c){
+    var b = document.createElement('button');
+    b.textContent = c;
+    b.onclick = function(){ userSay(c); };
+    box.appendChild(b);
+  });
+  chat.appendChild(box);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function renderTopics(){
+  var el = document.getElementById('topics');
+  el.innerHTML = '';
+  TOPICS.forEach(function(t){
+    var b = document.createElement('button');
+    b.className = 'topic' + (st.t === t ? ' active' : '');
+    var stt = st.done[t.id] ? '<span class="st done">완료</span>' : (st.t === t ? '<span class="st">' + (st.s + 1) + '/' + t.steps.length + '</span>' : '<span class="st">' + t.steps.length + '문항</span>');
+    b.innerHTML = '<span>' + t.name + '</span>' + stt;
+    b.onclick = function(){ startTopic(t); document.querySelector('aside').classList.remove('open'); };
+    el.appendChild(b);
+  });
+  var total = 0, cur = 0;
+  TOPICS.forEach(function(t){
+    total += t.steps.length;
+    if (st.done[t.id]) cur += t.steps.length;
+    else if (st.t === t) cur += st.s;
+  });
+  document.getElementById('pg').style.width = (cur / total * 100) + '%';
+  document.getElementById('sc1').textContent = st.solo;
+  document.getElementById('sc2').textContent = st.helped;
+}
+function renderNote(){
+  var n = document.getElementById('note');
+  var items = TOPICS.filter(function(t){ return st.done[t.id]; });
+  if (!items.length) {
+    n.innerHTML = '<span class="empty">스스로 발견한 공식이 여기에 쌓여요.</span>';
+    return;
+  }
+  n.innerHTML = '';
+  items.forEach(function(t){
+    var d = document.createElement('div');
+    d.textContent = t.formula;
+    n.appendChild(d);
+  });
+}
+
+function startTopic(t){
+  clearChoices();
+  st.t = t; st.s = 0; st.tries = 0;
+  renderTopics();
+  addMsg('[' + t.name + '] 탐구 시작', 'user');
+  bot(t.intro, '', null, ask);
+}
+function ask(){
+  var step = st.t.steps[st.s];
+  st.tries = 0;
+  renderTopics();
+  bot(step.q, '', step.svg, function(){
+    if (step.type === 'choice') showChoices(step.choices);
+    inp.focus();
+  });
+}
+
+// ---------- 답 판단 ----------
+function norm(s){ return s.replace(/\s+/g, '').toLowerCase(); }
+function isHalf(s){
+  var x = s.replace(/반지름/g, '');
+  return /절반|반|2분의1|이분의일|1\/2|½|나누기2|÷2|\/2|0\.5|둘로나|2로나/.test(x);
+}
+function hasTok(s, tok){ return tok === 'HALF' ? isHalf(s) : s.indexOf(tok) >= 0; }
+function check(step, raw){
+  var s = norm(raw);
+  if (step.type === 'num') {
+    var m = s.replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+    return m ? Math.abs(parseFloat(m[0]) - step.ans) < 0.001 : false;
+  }
+  if (step.type === 'choice') return norm(step.ans) === s || s.indexOf(norm(step.ans)) >= 0;
+  if (step.type === 'kw') {
+    return step.kw.some(function(group){
+      return group.every(function(tok){ return hasTok(s, tok); });
+    });
+  }
+  return s.length > 0;
+}
+
+function next(){
+  st.s++;
+  if (st.s >= st.t.steps.length) {
+    st.done[st.t.id] = true;
+    renderTopics();
+    renderNote();
+    var remain = TOPICS.filter(function(t){ return !st.done[t.id]; });
+    var msg = '[' + st.t.name + '] 탐구 완료!\n\n오늘 스스로 발견한 공식:\n' + st.t.formula + '\n\n공식을 외우는 것보다 "왜 그렇게 되는지"를 설명할 수 있는 것이 더 중요해요. 여러분은 이제 설명할 수 있어요.';
+    if (remain.length) msg += '\n\n다음엔 어떤 도형을 탐구해 볼까요?';
+    else msg += '\n\n모든 도형을 탐구했어요! 모든 공식이 결국 "직사각형으로 바꾸기"에서 나왔다는 것, 눈치챘나요?';
+    bot(msg, 'good', null, function(){
+      if (remain.length) showChoices(remain.map(function(t){ return t.name; }));
+    });
+    st.t = null;
+    return;
+  }
+  ask();
+}
+
+function userSay(text){
+  text = (text || '').trim();
+  if (!text || st.lock) return;
+  clearChoices();
+  addMsg(text, 'user');
+  inp.value = '';
+
+  if (!st.t) {
+    var tp = TOPICS.find(function(t){ return norm(t.name).indexOf(norm(text)) >= 0 || norm(text).indexOf(norm(t.name).replace(/\(.*\)/, '')) >= 0; });
+    if (tp) { st.t = tp; st.s = 0; renderTopics(); bot(tp.intro, '', null, ask); }
+    else bot('어떤 도형을 탐구해 볼까요? 왼쪽 목록이나 아래 버튼에서 골라 주세요.', '', null, function(){ showChoices(TOPICS.map(function(t){ return t.name; })); });
+    return;
+  }
+  if (/처음부터|다시시작/.test(norm(text))) { var t0 = st.t; st.t = null; startTopic(t0); return; }
+
+  var step = st.t.steps[st.s];
+  var askHelp = /모르|몰라|힌트|글쎄|잘모|어려워|헷갈/.test(norm(text));
+
+  if (!askHelp && check(step, text)) {
+    if (step.type === 'open') { bot(step.ok, 'good', null, next); return; }
+    if (st.tries === 0) st.solo++; else st.helped++;
+    bot(pick(PRAISE) + ' ' + step.ok, 'good', null, next);
+    return;
+  }
+  if (step.type === 'open') { bot('어떤 생각이든 좋아요. 짧게라도 내 생각을 적어 볼래요?', 'hint'); return; }
+
+  st.tries++;
+  var h = step.hints || [];
+  if (st.tries <= h.length) {
+    var pre = askHelp ? '괜찮아요, 모르는 건 부끄러운 게 아니에요. 이렇게 생각해 볼까요?' : pick(RETRY);
+    bot(pre + '\n\n' + h[st.tries - 1], 'hint', null, function(){ if (step.type === 'choice') showChoices(step.choices); });
+  } else {
+    bot('함께 정리해 볼게요. 답은 "' + step.ans + '"이에요.\n' + step.ok + '\n\n왜 그런지 이해되었다면 다음으로 넘어가 볼게요.', '', null, next);
+  }
+}
+
+document.getElementById('send').onclick = function(){ userSay(inp.value); };
+inp.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.isComposing) userSay(inp.value); });
+
+renderTopics();
+bot('안녕하세요! 저는 소크라테스 수학 선생님이에요.\n\n소크라테스는 답을 가르쳐 주는 대신 질문을 던져서 사람들이 스스로 깨닫게 했대요. 저도 질문을 할 테니, 여러분이 직접 도형의 넓이 공식을 "발견"해 보세요.\n\n어떤 도형부터 탐구해 볼까요? (처음이라면 평행사변형부터 추천해요)', '', null, function(){
+  showChoices(TOPICS.map(function(t){ return t.name; }));
+});
+</script>
+</body>
+</html>
